@@ -30,6 +30,7 @@ class CodeBannerFileFormat(TypedDict):
 class Language(enum.Enum):
     CPP = enum.auto()
     PYTHON = enum.auto()
+    JAVASCRIPT = enum.auto()
 
 class CodeBanner:   
 
@@ -99,6 +100,9 @@ class CodeBanner:
         
         if extension in ['.c', '.cpp', '.h', '.hpp']:
             return Language.CPP
+
+        if extension in ['.js']:
+            return Language.JAVASCRIPT
         
         raise Exception('Unknown file extension')
         
@@ -168,6 +172,10 @@ class CodeBanner:
             skip_patterns = []
             comment_pattern = [r'^\s*//(.*)', r'^\s+$']
             shebang = ''
+        elif language == Language.JAVASCRIPT:
+            skip_patterns = []
+            comment_pattern = [r'^\s*//(.*)', r'^\s+$']
+            shebang = '#!/bin/node\n\n' if add_shebang else ''
         elif language == Language.PYTHON:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
@@ -234,8 +242,8 @@ class CodeBanner:
         else:
             render_data['date'] = datetime.now().strftime('%Y')
         render_data['copyright_owner'] = self.config['copyright_owner']
-        
-        if language == Language.CPP:
+
+        if language == Language.CPP or language == Language.JAVASCRIPT:
             render_data['filename'] = '//    ' + os.path.basename(filepath)
             new_header = """{shebang}{filename}{docstring}
 //
@@ -296,7 +304,7 @@ class CodeBanner:
         if docstring:
             docstring = '\n' + docstring
 
-        if language == Language.CPP:
+        if language == Language.CPP or language==language.JAVASCRIPT:
             docstring = docstring.replace('\n', '\n//'+' '*space)
         elif language == Language.PYTHON:
             docstring = docstring.replace('\n', '\n#'+' '*space)
