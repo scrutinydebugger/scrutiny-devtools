@@ -118,8 +118,7 @@ class CodeBanner:
         folders_to_scan = self.config['folders']
         if len(folders_to_scan) == 0:
             folders_to_scan = '.'
-        import ipdb
-       # ipdb.set_trace()
+
         for start_folder in folders_to_scan:
             for root, subdirs, files in os.walk(path.join(self.base_folder, start_folder)):
                 included_files = set()
