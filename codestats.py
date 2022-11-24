@@ -208,8 +208,6 @@ def get_language(filename: str, metadata: FolderMetadata) -> Language:
         return Language.PYTHON
     if ext in ['.js', '.cjs']:
         return Language.JAVASCRIPT
-    if ext in ['.js', '.cjs']:
-        return Language.CSS
     if ext in ['.html', '.htm']:
         return Language.HTML
     if ext in ['.md']:
