@@ -264,13 +264,14 @@ class CodeBanner:
         double_date = True
         start_date = self.config['copyright_start_date']
         end_date = self.config['copyright_end_date']
-        if not self.config['copyright_start_date']:
+        if not start_date:
             start_date = datetime.now().strftime('%Y')
-            double_date = False
-        elif start_date == datetime.now().strftime('%Y'):
             double_date = False
 
         if not end_date:
+            double_date = False
+
+        if start_date == end_date:
             double_date = False
 
         if double_date:
