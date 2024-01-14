@@ -28,6 +28,7 @@ class CodeBannerFileFormat(TypedDict):
     license: str
     copyright_owner: str
     copyright_start_date: str
+    copyright_end_date: str
     files: Dict[str, FileEntry]
 
 
@@ -88,6 +89,9 @@ class CodeBanner:
 
         if 'copyright_start_date' not in self.config:
             self.config['copyright_start_date'] = datetime.now().strftime('%Y')
+
+        if 'copyright_end_date' not in self.config:
+            self.config['copyright_end_date'] = datetime.now().strftime('%Y')
 
         if 'files' not in self.config:
             self.config['files'] = {}
@@ -258,16 +262,21 @@ class CodeBanner:
         render_data['repo'] = '(%s)' % self.config['repo'] if self.config['repo'] else ''
 
         double_date = True
+        start_date = self.config['copyright_start_date']
+        end_date = self.config['copyright_end_date']
         if not self.config['copyright_start_date']:
+            start_date = datetime.now().strftime('%Y')
             double_date = False
-        elif self.config['copyright_start_date'] == datetime.now().strftime('%Y'):
+        elif start_date == datetime.now().strftime('%Y'):
+            double_date = False
+
+        if not end_date:
             double_date = False
 
         if double_date:
-            render_data['date'] = '%s-%s' % (
-                self.config['copyright_start_date'], datetime.now().strftime('%Y'))
+            render_data['date'] = '%s-%s' % (start_date, end_date)
         else:
-            render_data['date'] = datetime.now().strftime('%Y')
+            render_data['date'] = start_date
         render_data['copyright_owner'] = self.config['copyright_owner']
 
         if language == Language.CPP or language == Language.JAVASCRIPT or language == Language.TYPESCRIPT:
