@@ -203,7 +203,7 @@ class CodeBanner:
             comment_pattern = [r'^\s*//(.*)', r'^\s+$']
             shebang = '#!/bin/node\n\n' if add_shebang else ''
         elif language == Language.TYPESCRIPT:
-            skip_patterns = ['\/\/\s*@ts-(no)?check']
+            skip_patterns = [r'\/\/\s*@ts-(no)?check']
             comment_pattern = [r'^\s*//(.*)', r'^\s+$']
             shebang = '#!/bin/node\n\n' if add_shebang else ''
         elif language == Language.PYTHON:

@@ -1,0 +1,170 @@
+{
+    "info" : {
+        "src" : "src/default/info.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "warning" : {
+        "src" : "src/default/warning.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "error" : {
+        "src" : "src/default/error.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "success" : {
+        "src" : "src/default/success.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "redx" : {
+        "src" : "src/default/redx.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-red" : {
+        "src" : "src/default/square-red.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-yellow" : {
+        "src" : "src/default/square-yellow.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-green" : {
+        "src" : "src/default/square-green.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "alias" : {
+        "src" : "src/default/alias.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "var" : {
+        "src" : "src/default/var.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "rpv" : {
+        "src" : "src/default/rpv.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "csv" : {
+        "src" : "src/default/csv.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "eye" : {
+        "src" : "src/default/eye.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "eye-bar" : {
+        "src" : "src/default/eye-bar.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "image" : {
+        "src" : "src/default/image.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-cursor" : {
+        "src" : "src/default/graph-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-no-cursor" : {
+        "src" : "src/default/graph-no-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-100" : {
+        "src" : "src/default/zoom-100.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-x" : {
+        "src" : "src/default/zoom-x.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-y" : {
+        "src" : "src/default/zoom-y.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-xy" : {
+        "src" : "src/default/zoom-xy.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    }
+}
