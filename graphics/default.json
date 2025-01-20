@@ -174,5 +174,21 @@
             [64,64],
             [16,16]
         ]
+    },
+    "folder" : {
+        "src" : "src/default/folder.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "scrutiny-logo" : {
+        "src" : "src/default/scrutiny-logo.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
     }
 }
