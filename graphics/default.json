@@ -190,5 +190,29 @@
             [64,64],
             [16,16]
         ]
+    },
+    "download" : {
+        "src" : "src/default/download.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-arrow" : {
+        "src" : "src/default/cursor-arrow.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-hand-drag" : {
+        "src" : "src/default/cursor-hand-drag.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
     }
 }
