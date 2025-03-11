@@ -214,5 +214,29 @@
             [64,64],
             [16,16]
         ]
+    },
+    "test-square" : {
+        "src" : "src/default/test-square.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "test-hrect" : {
+        "src" : "src/default/test-hrect.png",
+        "formats" : [
+            [192,256],
+            [48,64],
+            [12,16]
+        ]
+    },
+    "test-vrect" : {
+        "src" : "src/default/test-vrect.png",
+        "formats" : [
+            [256,192],
+            [64,48],
+            [16,12]
+        ]
     }
 }
