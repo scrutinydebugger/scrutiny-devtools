@@ -226,17 +226,25 @@
     "test-hrect" : {
         "src" : "src/default/test-hrect.png",
         "formats" : [
-            [192,256],
-            [48,64],
-            [12,16]
+            [256,192],
+            [64,48],
+            [16,12]
         ]
     },
     "test-vrect" : {
         "src" : "src/default/test-vrect.png",
         "formats" : [
-            [256,192],
-            [64,48],
-            [16,12]
+            [192, 256],
+            [48, 64],
+            [12, 16]
+        ]
+    },
+    "trigger" : {
+        "src" : "src/default/trigger.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
         ]
     }
 }
