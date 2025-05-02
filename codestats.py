@@ -234,19 +234,19 @@ def get_line_type(line: str, lang: Language, in_comment: bool = False) -> LineTy
         return LineType.COMMENT
 
     if lang in [Language.C, Language.CPP, Language.TYPESCRIPT, Language.JAVASCRIPT, Language.JENKINS]:
-        comment_regex = re.compile('^\s*(\/\/.+)|(\/\*.*\*\/)\s*$')
+        comment_regex = re.compile(r'^\s*(\/\/.+)|(\/\*.*\*\/)\s*$')
         if comment_regex.match(line):
             return LineType.COMMENT
     elif lang in [Language.PYTHON, Language.CMAKE, Language.BASH, Language.DOCKER]:
-        comment_regex = re.compile('^\s*#.+\s*$')
+        comment_regex = re.compile(r'^\s*#.+\s*$')
         if comment_regex.match(line):
             return LineType.COMMENT
     elif lang in [Language.CSS]:
-        comment_regex = re.compile('^\s*(\/\*.*\*\/)\s*$')
+        comment_regex = re.compile(r'^\s*(\/\*.*\*\/)\s*$')
         if comment_regex.match(line):
             return LineType.COMMENT
     elif lang in [Language.HTML]:
-        comment_regex = re.compile('^\s*<!--.*-->\s*$')
+        comment_regex = re.compile(r'^\s*<!--.*-->\s*$')
         if comment_regex.match(line):
             return LineType.COMMENT
 

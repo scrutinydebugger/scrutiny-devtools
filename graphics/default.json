@@ -246,5 +246,21 @@
             [64, 64],
             [16, 16]
         ]
+    },
+    "text-edit" : {
+        "src" : "src/default/text-edit.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "window" : {
+        "src" : "src/default/window.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
     }
 }
