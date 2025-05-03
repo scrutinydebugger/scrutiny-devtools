@@ -262,5 +262,45 @@
             [64, 64],
             [16, 16]
         ]
+    },
+    "pin" : {
+        "src" : "src/default/pin.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-left" : {
+        "src" : "src/default/sidebar-left.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-top" : {
+        "src" : "src/default/sidebar-top.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-right" : {
+        "src" : "src/default/sidebar-right.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-bottom" : {
+        "src" : "src/default/sidebar-bottom.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
     }
 }
