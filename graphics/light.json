@@ -1,0 +1,202 @@
+{
+    "eye" : {
+        "src" : "src/light/eye.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "eye-bar" : {
+        "src" : "src/light/eye-bar.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-cursor" : {
+        "src" : "src/light/graph-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-no-cursor" : {
+        "src" : "src/light/graph-no-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-100" : {
+        "src" : "src/light/zoom-100.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-x" : {
+        "src" : "src/light/zoom-x.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-y" : {
+        "src" : "src/light/zoom-y.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-xy" : {
+        "src" : "src/light/zoom-xy.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "axis" : {
+        "src" : "src/light/axis.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "download" : {
+        "src" : "src/light/download.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-arrow" : {
+        "src" : "src/light/cursor-arrow.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-hand-drag" : {
+        "src" : "src/light/cursor-hand-drag.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "trigger" : {
+        "src" : "src/light/trigger.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "text-edit" : {
+        "src" : "src/light/text-edit.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "window" : {
+        "src" : "src/light/window.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "pin" : {
+        "src" : "src/light/pin.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "unpin" : {
+        "src" : "src/light/unpin.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-left" : {
+        "src" : "src/light/sidebar-left.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-top" : {
+        "src" : "src/light/sidebar-top.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-right" : {
+        "src" : "src/light/sidebar-right.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-bottom" : {
+        "src" : "src/light/sidebar-bottom.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "varlist" : {
+        "src" : "src/light/varlist.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    },
+    "watch" : {
+        "src" : "src/light/watch.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    },
+    "continuous-graph" : {
+        "src" : "src/light/continuous-graph.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    },
+    "stopwatch" : {
+        "src" : "src/light/stopwatch.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    }
+}

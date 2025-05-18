@@ -1,0 +1,154 @@
+{
+    "info" : {
+        "src" : "src/common/info.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "warning" : {
+        "src" : "src/common/warning.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "error" : {
+        "src" : "src/common/error.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "success" : {
+        "src" : "src/common/success.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "redx" : {
+        "src" : "src/common/redx.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-red" : {
+        "src" : "src/common/square-red.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-yellow" : {
+        "src" : "src/common/square-yellow.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "square-green" : {
+        "src" : "src/common/square-green.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "alias" : {
+        "src" : "src/common/alias.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "var" : {
+        "src" : "src/common/var.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "rpv" : {
+        "src" : "src/common/rpv.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "csv" : {
+        "src" : "src/common/csv.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "folder" : {
+        "src" : "src/common/folder.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "scrutiny-logo" : {
+        "src" : "src/common/scrutiny-logo.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "test-square" : {
+        "src" : "src/common/test-square.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "test-hrect" : {
+        "src" : "src/common/test-hrect.png",
+        "formats" : [
+            [256,192],
+            [64,48],
+            [16,12]
+        ]
+    },
+    "test-vrect" : {
+        "src" : "src/common/test-vrect.png",
+        "formats" : [
+            [192, 256],
+            [48, 64],
+            [12, 16]
+        ]
+    },
+    "image" : {
+        "src" : "src/common/image.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "embedded-graph" : {
+        "src" : "src/common/embedded-graph.png",
+        "formats" : [
+            [256,192],
+            [64,48],
+            [16,12]
+        ]
+    }
+}

@@ -308,7 +308,7 @@ class CodeBanner:
         for line_to_insert in header_lines:
             all_lines.insert(start_line, line_to_insert + '\n')
 
-        with open(filepath, 'w') as f:
+        with open(filepath, 'w', encoding='utf8') as f:
             f.writelines(all_lines)
 
     def format_docstring(self, docstring: str, language: Language):

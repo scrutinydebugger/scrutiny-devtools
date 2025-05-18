@@ -1,0 +1,203 @@
+{
+    "eye" : {
+        "src" : "src/dark/eye.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "eye-bar" : {
+        "src" : "src/dark/eye-bar.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-cursor" : {
+        "src" : "src/dark/graph-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "graph-no-cursor" : {
+        "src" : "src/dark/graph-no-cursor.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-100" : {
+        "src" : "src/dark/zoom-100.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-x" : {
+        "src" : "src/dark/zoom-x.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-y" : {
+        "src" : "src/dark/zoom-y.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "zoom-xy" : {
+        "src" : "src/dark/zoom-xy.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "axis" : {
+        "src" : "src/dark/axis.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "download" : {
+        "src" : "src/dark/download.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-arrow" : {
+        "src" : "src/dark/cursor-arrow.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "cursor-hand-drag" : {
+        "src" : "src/dark/cursor-hand-drag.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "trigger" : {
+        "src" : "src/dark/trigger.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "text-edit" : {
+        "src" : "src/dark/text-edit.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "window" : {
+        "src" : "src/dark/window.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "pin" : {
+        "src" : "src/dark/pin.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "unpin" : {
+        "src" : "src/dark/unpin.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-left" : {
+        "src" : "src/dark/sidebar-left.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-top" : {
+        "src" : "src/dark/sidebar-top.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-right" : {
+        "src" : "src/dark/sidebar-right.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "sidebar-bottom" : {
+        "src" : "src/dark/sidebar-bottom.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "varlist" : {
+        "src" : "src/dark/varlist.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    },
+    "watch" : {
+        "src" : "src/dark/watch.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    },
+    "continuous-graph" : {
+        "src" : "src/dark/continuous-graph.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    }
+    ,
+    "stopwatch" : {
+        "src" : "src/dark/stopwatch.png",
+        "formats" : [
+            [256, 192],
+            [64, 48],
+            [16, 12]
+        ]
+    }
+}
