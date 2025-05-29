@@ -11,7 +11,7 @@ import logging
 from fnmatch import fnmatch
 from os import path
 
-from typing import List, Generator, TypedDict, Dict
+from typing import List, Generator, TypedDict, Dict, Set
 
 
 class FileEntry(TypedDict, total=False):
@@ -20,7 +20,7 @@ class FileEntry(TypedDict, total=False):
 
 
 class CodeBannerFileFormat(TypedDict):
-    folders: str
+    folders: List[str]
     include_patterns: List[str]
     exclude_patterns: List[str]
     project: str
@@ -37,6 +37,7 @@ class Language(enum.Enum):
     PYTHON = enum.auto()
     JAVASCRIPT = enum.auto()
     TYPESCRIPT = enum.auto()
+    BASH = enum.auto()
 
 
 class CodeBanner:
@@ -116,32 +117,35 @@ class CodeBanner:
         if extension in ['.ts']:
             return Language.TYPESCRIPT
 
+        if extension in ['.sh']:
+            return Language.BASH
+
         raise Exception('Unknown file extension ' + extension)
 
     def scan_files(self) -> Generator[str, None, None]:
-        folders_to_scan = self.config['folders']
+        folders_to_scan = self.config.get('folders',['.'])
         if len(folders_to_scan) == 0:
-            folders_to_scan = '.'
+            folders_to_scan = ['.']
 
         for start_folder in folders_to_scan:
             for root, subdirs, files in os.walk(path.join(self.base_folder, start_folder)):
-                included_files = set()
+                included_files:Set[str] = set()
                 for file in files:
                     filename = self.make_name(path.join(root, file))
-                    for include_pattern in self.config['include_patterns']:
+                    for include_pattern in self.config.get('include_patterns', ''):
                         if fnmatch(filename, include_pattern):
                             excluded = False
-                            for exclude_pattern in self.config['exclude_patterns']:
+                            for exclude_pattern in self.config.get('exclude_patterns', ''):
                                 if fnmatch(filename, exclude_pattern):
                                     excluded = True
                             if not excluded:
                                 included_files.add(filename)
 
-                new_subdirs = []
+                new_subdirs:List[str] = []
                 for subdir in subdirs:
                     subdirname = self.make_name(path.join(root, subdir))
                     excluded = False
-                    for exclude_pattern in self.config['exclude_patterns']:
+                    for exclude_pattern in self.config.get('exclude_patterns', ''):
                         if fnmatch(subdirname, exclude_pattern):
                             excluded = True
 
@@ -156,11 +160,11 @@ class CodeBanner:
                 for filename in included_files:
                     yield filename.replace('\\', '/')
 
-    def make_name(self, pathname):
+    def make_name(self, pathname:str) -> str:
         return path.relpath(path.abspath(path.normpath(pathname)), path.abspath(self.base_folder))
 
     def add_files(self, files: List[str], remove_not_present: bool = False) -> None:
-        files_to_remove = []
+        files_to_remove:List[str] = []
 
         if remove_not_present:
             for file in self.config['files']:
@@ -192,7 +196,11 @@ class CodeBanner:
 
         language = self.get_language(filepath)
         docstring = file_entry['docstring']
-        add_shebang = False if 'add_shebang' not in file_entry else file_entry['add_shebang']
+        defaultadd_shebang = False
+        if language == Language.BASH:
+            defaultadd_shebang=True
+
+        add_shebang = defaultadd_shebang if 'add_shebang' not in file_entry else file_entry['add_shebang']
 
         if language == Language.CPP:
             skip_patterns = []
@@ -210,6 +218,10 @@ class CodeBanner:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
             shebang = '#!/usr/bin/env python3\n\n' if add_shebang else ''
+        elif language == Language.BASH:
+            skip_patterns = []
+            comment_pattern = [r'^\s*#(.*)', r'^\s+$']
+            shebang = '#!/bin/bash\n\n' if add_shebang else ''
         else:
             raise NotImplementedError('Unsupported language %s' % language)
 
@@ -299,6 +311,15 @@ class CodeBanner:
 #
 #   Copyright (c) {date} {copyright_owner}
 """.format(**render_data)
+        elif language == Language.BASH:
+            render_data['filename'] = '#    ' + path.basename(filepath)
+            new_header = """{shebang}{filename}{docstring}
+#
+#   - License : {license}.
+#   - Project :  {project} {repo}
+#
+#   Copyright (c) {date} {copyright_owner}
+""".format(**render_data)
         else:
             raise Exception('Unknown language %s' % language)
 
@@ -341,9 +362,9 @@ class CodeBanner:
         if docstring:
             docstring = '\n' + docstring
 
-        if language == Language.CPP or language == language.JAVASCRIPT or language == Language.TYPESCRIPT:
+        if language in [Language.CPP, language.JAVASCRIPT, Language.TYPESCRIPT]:
             docstring = docstring.replace('\n', '\n//' + ' ' * space)
-        elif language == Language.PYTHON:
+        elif language in [Language.PYTHON, language.BASH]:
             docstring = docstring.replace('\n', '\n#' + ' ' * space)
         else:
             raise NotImplementedError('Unsupported language %s' % language)
