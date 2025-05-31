@@ -95,12 +95,12 @@
             [16,16]
         ]
     },
-    "trigger" : {
-        "src" : "src/dark/trigger.png",
+    "threedots" : {
+        "src" : "src/dark/threedots.png",
         "formats" : [
-            [256, 256],
-            [64, 64],
-            [16, 16]
+            [256, 128],
+            [64, 32],
+            [16, 8]
         ]
     },
     "text-edit" : {
@@ -190,8 +190,7 @@
             [64, 48],
             [16, 12]
         ]
-    }
-    ,
+    },
     "stopwatch" : {
         "src" : "src/dark/stopwatch.png",
         "formats" : [

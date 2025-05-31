@@ -95,12 +95,12 @@
             [16,16]
         ]
     },
-    "trigger" : {
-        "src" : "src/light/trigger.png",
+    "threedots" : {
+        "src" : "src/light/threedots.png",
         "formats" : [
-            [256, 256],
-            [64, 64],
-            [16, 16]
+            [256, 128],
+            [64, 32],
+            [16, 8]
         ]
     },
     "text-edit" : {
