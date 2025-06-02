@@ -10,9 +10,27 @@ import sys
 import logging
 from fnmatch import fnmatch
 from os import path
+import subprocess
 
 from typing import List, Generator, TypedDict, Dict, Set
 
+def get_edit_years(file:str) -> List[int]:
+    years:Set[int] = set()
+    p = subprocess.run(['git', 'log', '--follow', r'--format=%aI', '--date', 'default', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if p.returncode != 0:
+        raise RuntimeError("Failed to get date.\n" + p.stderr.decode() )
+    for line in p.stdout.decode('utf8').splitlines():
+        dt = datetime.fromisoformat(line)
+        years.add(dt.year)
+
+    return sorted(list(years))
+
+def get_first_edit_year(file:str) -> int:
+    years = get_edit_years(file)
+    if len(years) == 0:
+        raise RuntimeError(f"Cannot find edit year of file {file}")
+    return years[0]
 
 class FileEntry(TypedDict, total=False):
     docstring: str
@@ -105,7 +123,7 @@ class CodeBanner:
         p = pathlib.Path(filename)
         extension = p.suffix.lower()
 
-        if extension in ['.py']:
+        if extension in ['.py', '.pyi']:
             return Language.PYTHON
 
         if extension in ['.c', '.cpp', '.h', '.hpp']:
@@ -277,7 +295,7 @@ class CodeBanner:
         start_date = self.config['copyright_start_date']
         end_date = self.config['copyright_end_date']
         if not start_date:
-            start_date = datetime.now().strftime('%Y')
+            start_date = get_first_edit_year(filepath)
             double_date = False
 
         if not end_date:
@@ -285,7 +303,7 @@ class CodeBanner:
 
         if start_date == end_date:
             double_date = False
-
+        
         if double_date:
             render_data['date'] = '%s-%s' % (start_date, end_date)
         else:
