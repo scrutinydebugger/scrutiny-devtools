@@ -56,6 +56,7 @@ class Language(enum.Enum):
     JAVASCRIPT = enum.auto()
     TYPESCRIPT = enum.auto()
     BASH = enum.auto()
+    CMAKE = enum.auto()
 
 
 class CodeBanner:
@@ -138,7 +139,13 @@ class CodeBanner:
         if extension in ['.sh']:
             return Language.BASH
 
-        raise Exception('Unknown file extension ' + extension)
+        if extension in ['.cmake']:
+            return Language.CMAKE
+        
+        if os.path.basename(filename) == 'CMakeLists.txt':
+            return Language.CMAKE
+
+        raise Exception(f'Unknown language for file:  {filename}')
 
     def scan_files(self) -> Generator[str, None, None]:
         folders_to_scan = self.config.get('folders',['.'])
@@ -240,6 +247,10 @@ class CodeBanner:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
             shebang = '#!/bin/bash\n\n' if add_shebang else ''
+        elif language == Language.CMAKE:
+            skip_patterns = []
+            comment_pattern = [r'^\s*#(.*)', r'^\s+$']
+            shebang = ''
         else:
             raise NotImplementedError('Unsupported language %s' % language)
 
@@ -338,6 +349,15 @@ class CodeBanner:
 #
 #   Copyright (c) {date} {copyright_owner}
 """.format(**render_data)
+        elif language == Language.CMAKE:
+            render_data['filename'] = '#    ' + path.basename(filepath)
+            new_header = """{shebang}{filename}{docstring}
+#
+#   - License : {license}.
+#   - Project :  {project} {repo}
+#
+#   Copyright (c) {date} {copyright_owner}
+""".format(**render_data)            
         else:
             raise Exception('Unknown language %s' % language)
 
@@ -380,9 +400,9 @@ class CodeBanner:
         if docstring:
             docstring = '\n' + docstring
 
-        if language in [Language.CPP, language.JAVASCRIPT, Language.TYPESCRIPT]:
+        if language in [Language.CPP, Language.JAVASCRIPT, Language.TYPESCRIPT]:
             docstring = docstring.replace('\n', '\n//' + ' ' * space)
-        elif language in [Language.PYTHON, language.BASH]:
+        elif language in [Language.PYTHON, Language.BASH, Language.CMAKE]:
             docstring = docstring.replace('\n', '\n#' + ' ' * space)
         else:
             raise NotImplementedError('Unsupported language %s' % language)
