@@ -37,8 +37,8 @@ def main():
             for format in config['formats']:
                 assert len(format) == 2
 
-                dst = src_image.copy()
-                dst.thumbnail(tuple(format), Image.LANCZOS)
+                #dst = src_image.copy()
+                dst = src_image.resize(tuple(format), Image.Resampling.LANCZOS)
                 dst.save(os.path.join(args.output, f"{name}_{format[0]}x{format[1]}.png"), "PNG")
 
 if __name__ == '__main__':
