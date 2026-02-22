@@ -35,6 +35,8 @@ def get_first_edit_year(file:str) -> int:
 class FileEntry(TypedDict, total=False):
     docstring: str
     add_shebang: bool
+    author:str
+    contributors:List[str]
 
 
 class CodeBannerFileFormat(TypedDict):
@@ -48,6 +50,7 @@ class CodeBannerFileFormat(TypedDict):
     copyright_start_date: str
     copyright_end_date: str
     files: Dict[str, FileEntry]
+    authors:Dict[str,str]
 
 
 class Language(enum.Enum):
@@ -115,6 +118,9 @@ class CodeBanner:
 
         if 'files' not in self.config:
             self.config['files'] = {}
+
+        if 'authors' not in self.config:
+            self.config['authors'] = {}
 
     def write_config(self) -> None:
         with open(self.banner_file, 'w', encoding='utf8') as f:
@@ -217,7 +223,7 @@ class CodeBanner:
     def write_docstring(self, filepath: str, file_entry: FileEntry) -> None:
 
         # TODO : Would be better to use """ in Python and /**/ in cpp.
-        # But I don't want to spend time on file aprsing. There must be a tool that does that.
+        # But I don't want to spend time on file parsing. There must be a tool that does that.
 
         language = self.get_language(filepath)
         docstring = file_entry['docstring']
@@ -226,6 +232,9 @@ class CodeBanner:
             defaultadd_shebang=True
 
         add_shebang = defaultadd_shebang if 'add_shebang' not in file_entry else file_entry['add_shebang']
+        author="" if 'author' not in file_entry else file_entry['author']
+        contributors=[] if 'contributors' not in file_entry else file_entry['contributors']
+
 
         if language == Language.CPP:
             skip_patterns = []
@@ -234,19 +243,19 @@ class CodeBanner:
         elif language == Language.JAVASCRIPT:
             skip_patterns = []
             comment_pattern = [r'^\s*//(.*)', r'^\s+$']
-            shebang = '#!/bin/node\n\n' if add_shebang else ''
+            shebang = '#!/bin/node' if add_shebang else ''
         elif language == Language.TYPESCRIPT:
             skip_patterns = [r'\/\/\s*@ts-(no)?check']
             comment_pattern = [r'^\s*//(.*)', r'^\s+$']
-            shebang = '#!/bin/node\n\n' if add_shebang else ''
+            shebang = '#!/bin/node' if add_shebang else ''
         elif language == Language.PYTHON:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
-            shebang = '#!/usr/bin/env python3\n\n' if add_shebang else ''
+            shebang = '#!/usr/bin/env python3' if add_shebang else ''
         elif language == Language.BASH:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
-            shebang = '#!/bin/bash\n\n' if add_shebang else ''
+            shebang = '#!/bin/bash' if add_shebang else ''
         elif language == Language.CMAKE:
             skip_patterns = []
             comment_pattern = [r'^\s*#(.*)', r'^\s+$']
@@ -294,14 +303,6 @@ class CodeBanner:
         for i in range(comment_lines):
             all_lines.pop(start_line)
 
-        render_data = {}
-        render_data['shebang'] = shebang
-
-        render_data['docstring'] = self.format_docstring(docstring, language)
-        render_data['license'] = self.config['license']
-        render_data['project'] = self.config['project']
-        render_data['repo'] = '(%s)' % self.config['repo'] if self.config['repo'] else ''
-
         double_date = True
         start_date = self.config['copyright_start_date']
         end_date = self.config['copyright_end_date']
@@ -316,50 +317,51 @@ class CodeBanner:
             double_date = False
         
         if double_date:
-            render_data['date'] = '%s-%s' % (start_date, end_date)
+            rendered_date = '%s-%s' % (start_date, end_date)
         else:
-            render_data['date'] = start_date
-        render_data['copyright_owner'] = self.config['copyright_owner']
+            rendered_date = start_date
 
-        if language == Language.CPP or language == Language.JAVASCRIPT or language == Language.TYPESCRIPT:
-            render_data['filename'] = '//    ' + path.basename(filepath)
-            new_header = """{shebang}{filename}{docstring}
-//
-//   - License : {license}.
-//   - Project : {project} {repo}
-//
-//   Copyright (c) {date} {copyright_owner}
-""".format(**render_data)
-
-        elif language == Language.PYTHON:
-            render_data['filename'] = '#    ' + path.basename(filepath)
-            new_header = """{shebang}{filename}{docstring}
-#
-#   - License : {license}.
-#   - Project :  {project} {repo}
-#
-#   Copyright (c) {date} {copyright_owner}
-""".format(**render_data)
-        elif language == Language.BASH:
-            render_data['filename'] = '#    ' + path.basename(filepath)
-            new_header = """{shebang}{filename}{docstring}
-#
-#   - License : {license}.
-#   - Project :  {project} {repo}
-#
-#   Copyright (c) {date} {copyright_owner}
-""".format(**render_data)
-        elif language == Language.CMAKE:
-            render_data['filename'] = '#    ' + path.basename(filepath)
-            new_header = """{shebang}{filename}{docstring}
-#
-#   - License : {license}.
-#   - Project :  {project} {repo}
-#
-#   Copyright (c) {date} {copyright_owner}
-""".format(**render_data)            
+        tab_space=4
+        def tab(count:int) -> str:
+            return ' '*(tab_space*count)
+        if language in [Language.CPP, Language.JAVASCRIPT, language == Language.TYPESCRIPT]:
+            comment_char="//"
+        elif language in [Language.PYTHON, Language.BASH, Language.CMAKE]:
+            comment_char="#"
         else:
             raise Exception('Unknown language %s' % language)
+
+        new_header=""
+        if add_shebang:
+            new_header += f"{shebang}\n\n"
+        new_header += f'{comment_char}{tab(1)}{path.basename(filepath)}\n'
+        if len(docstring) > 0:
+            formatted_docstring = self.format_docstring(docstring, comment_char, tab(2))
+            new_header += f'{comment_char}{formatted_docstring}\n'
+
+        new_header += f'{comment_char}\n'
+        def make_list_item(indent:int, key:str, val:str) -> str:
+            list_prefix = tab(indent)[:-1] + '-'
+            return f'{comment_char}{list_prefix} {key} : {val}\n'
+        
+        if len(author) > 0:
+            author_fullname = self.config['authors'][file_entry['author']]
+            new_header += make_list_item(1, 'Author', author_fullname)
+        
+        if len(contributors) > 0:
+            new_header += make_list_item(1, 'Contributors', "")
+            for contributor in contributors:
+                contributor_fullname = self.config['authors'][contributor]
+                new_header += f'{comment_char}{tab(2)[:-1]}- {contributor_fullname}\n'
+        
+        new_header += make_list_item(1, 'License', self.config['license'])
+        project_val = self.config['project']
+        if 'repo' in self.config and len(self.config['repo']) > 0:
+            project_val += f" ({self.config['repo']})"
+        new_header += make_list_item(1, 'Project', project_val)
+                    
+        new_header += f'{comment_char}\n'
+        new_header += f"{comment_char}{tab(1)}Copyright (c) {rendered_date} {self.config['copyright_owner']}\n"
 
         header_lines = new_header.split('\n')
         header_lines.reverse()
@@ -370,9 +372,8 @@ class CodeBanner:
         with open(filepath, 'w', encoding='utf8') as f:
             f.writelines(all_lines)
 
-    def format_docstring(self, docstring: str, language: Language):
+    def format_docstring(self, docstring: str, comment_char:str, spacer:str):
         chunk_size = 80
-        space = 8
         lines = []
         done = False
         while not done:
@@ -398,14 +399,10 @@ class CodeBanner:
                         i += 1
         docstring = '\n'.join(lines)
         if docstring:
-            docstring = '\n' + docstring
+            docstring = spacer + docstring
 
-        if language in [Language.CPP, Language.JAVASCRIPT, Language.TYPESCRIPT]:
-            docstring = docstring.replace('\n', '\n//' + ' ' * space)
-        elif language in [Language.PYTHON, Language.BASH, Language.CMAKE]:
-            docstring = docstring.replace('\n', '\n#' + ' ' * space)
-        else:
-            raise NotImplementedError('Unsupported language %s' % language)
+        docstring = docstring.replace('\n', f'\n{comment_char}' + spacer)
+        
         return docstring
 
 
