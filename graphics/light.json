@@ -198,5 +198,29 @@
             [64, 48],
             [16, 12]
         ]
+    },
+    "single-marker" : {
+        "src" : "src/light/single-marker.png",
+        "formats" : [
+            [192, 256],
+            [48, 64],
+            [12, 16]
+        ]
+    },
+    "dual-marker" : {
+        "src" : "src/light/dual-marker.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
+    },
+    "grid" : {
+        "src" : "src/light/grid.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
     }
 }
