@@ -230,5 +230,13 @@
             [64, 64],
             [16, 16]
         ]
+    },
+    "file_scval" : {
+        "src" : "src/common/file_scval.png",
+        "formats" : [
+            [256, 256],
+            [64, 64],
+            [16, 16]
+        ]
     }
 }

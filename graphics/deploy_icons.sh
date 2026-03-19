@@ -8,10 +8,12 @@ if [ ! -d "${SCRUTINY_MAIN}" ]; then
     echo "Don't know where is scrutiny-main"
 fi
 
-set -x
+set -xeuo pipefail
 rm -rf output
-python make_icons.py dark --output output/dark
-python make_icons.py light --output output/light
+python make_icons.py dark --output output/dark &
+python make_icons.py light --output output/light &
+
+wait 
 
 rm -rf "${SCRUTINY_MAIN}/scrutiny/gui/assets/icons/dark"
 mv output/dark "${SCRUTINY_MAIN}/scrutiny/gui/assets/icons/dark"
