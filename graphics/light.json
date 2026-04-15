@@ -231,12 +231,12 @@
             [16, 16]
         ]
     },
-    "file_scval" : {
-        "src" : "src/common/file_scval.png",
+    "gauge_lean" : {
+        "src" : "src/light/gauge_lean.png",
         "formats" : [
-            [256, 256],
-            [64, 64],
-            [16, 16]
+            [256,192],
+            [64,48],
+            [16,12]
         ]
     }
 }
