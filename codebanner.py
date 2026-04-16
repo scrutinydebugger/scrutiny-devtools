@@ -14,29 +14,33 @@ import subprocess
 
 from typing import List, Generator, TypedDict, Dict, Set
 
-def get_edit_years(file:str) -> List[int]:
-    years:Set[int] = set()
-    p = subprocess.run(['git', 'log', '--follow', r'--format=%aI', '--date', 'default', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+def get_edit_years(file: str, folder: str) -> List[int]:
+    years: Set[int] = set()
+    p = subprocess.run(['git', '-C', folder, 'log', '--follow', r'--format=%aI', '--date',
+                       'default', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if p.returncode != 0:
-        raise RuntimeError("Failed to get date.\n" + p.stderr.decode() )
+        raise RuntimeError("Failed to get date.\n" + p.stderr.decode())
     for line in p.stdout.decode('utf8').splitlines():
         dt = datetime.fromisoformat(line)
         years.add(dt.year)
 
     return sorted(list(years))
 
-def get_first_edit_year(file:str) -> int:
-    years = get_edit_years(file)
+
+def get_first_edit_year(file: str, folder: str) -> int:
+    years = get_edit_years(file, folder)
     if len(years) == 0:
         raise RuntimeError(f"Cannot find edit year of file {file}")
     return years[0]
 
+
 class FileEntry(TypedDict, total=False):
     docstring: str
     add_shebang: bool
-    author:str
-    contributors:List[str]
+    author: str
+    contributors: List[str]
 
 
 class CodeBannerFileFormat(TypedDict):
@@ -50,7 +54,7 @@ class CodeBannerFileFormat(TypedDict):
     copyright_start_date: str
     copyright_end_date: str
     files: Dict[str, FileEntry]
-    authors:Dict[str,str]
+    authors: Dict[str, str]
 
 
 class Language(enum.Enum):
@@ -147,20 +151,20 @@ class CodeBanner:
 
         if extension in ['.cmake']:
             return Language.CMAKE
-        
+
         if os.path.basename(filename) == 'CMakeLists.txt':
             return Language.CMAKE
 
         raise Exception(f'Unknown language for file:  {filename}')
 
     def scan_files(self) -> Generator[str, None, None]:
-        folders_to_scan = self.config.get('folders',['.'])
+        folders_to_scan = self.config.get('folders', ['.'])
         if len(folders_to_scan) == 0:
             folders_to_scan = ['.']
 
         for start_folder in folders_to_scan:
             for root, subdirs, files in os.walk(path.join(self.base_folder, start_folder)):
-                included_files:Set[str] = set()
+                included_files: Set[str] = set()
                 for file in files:
                     filename = self.make_name(path.join(root, file))
                     for include_pattern in self.config.get('include_patterns', ''):
@@ -172,7 +176,7 @@ class CodeBanner:
                             if not excluded:
                                 included_files.add(filename)
 
-                new_subdirs:List[str] = []
+                new_subdirs: List[str] = []
                 for subdir in subdirs:
                     subdirname = self.make_name(path.join(root, subdir))
                     excluded = False
@@ -191,11 +195,11 @@ class CodeBanner:
                 for filename in included_files:
                     yield filename.replace('\\', '/')
 
-    def make_name(self, pathname:str) -> str:
+    def make_name(self, pathname: str) -> str:
         return path.relpath(path.abspath(path.normpath(pathname)), path.abspath(self.base_folder))
 
     def add_files(self, files: List[str], remove_not_present: bool = False) -> None:
-        files_to_remove:List[str] = []
+        files_to_remove: List[str] = []
 
         if remove_not_present:
             for file in self.config['files']:
@@ -229,12 +233,11 @@ class CodeBanner:
         docstring = file_entry['docstring']
         defaultadd_shebang = False
         if language == Language.BASH:
-            defaultadd_shebang=True
+            defaultadd_shebang = True
 
         add_shebang = defaultadd_shebang if 'add_shebang' not in file_entry else file_entry['add_shebang']
-        author="" if 'author' not in file_entry else file_entry['author']
-        contributors=[] if 'contributors' not in file_entry else file_entry['contributors']
-
+        author = "" if 'author' not in file_entry else file_entry['author']
+        contributors = [] if 'contributors' not in file_entry else file_entry['contributors']
 
         if language == Language.CPP:
             skip_patterns = []
@@ -307,7 +310,7 @@ class CodeBanner:
         start_date = self.config['copyright_start_date']
         end_date = self.config['copyright_end_date']
         if not start_date:
-            start_date = get_first_edit_year(filepath)
+            start_date = get_first_edit_year(filepath, self.base_folder)
             double_date = False
 
         if not end_date:
@@ -315,51 +318,55 @@ class CodeBanner:
 
         if start_date == end_date:
             double_date = False
-        
+
         if double_date:
             rendered_date = '%s-%s' % (start_date, end_date)
         else:
             rendered_date = start_date
 
-        tab_space=4
-        def tab(count:int) -> str:
-            return ' '*(tab_space*count)
+        tab_space = 4
+
+        def tab(count: int) -> str:
+            return ' ' * (tab_space * count)
         if language in [Language.CPP, Language.JAVASCRIPT, language == Language.TYPESCRIPT]:
-            comment_char="//"
+            comment_char = "//"
         elif language in [Language.PYTHON, Language.BASH, Language.CMAKE]:
-            comment_char="#"
+            comment_char = "#"
         else:
             raise Exception('Unknown language %s' % language)
 
-        new_header=""
+        new_header = ""
         if add_shebang:
             new_header += f"{shebang}\n\n"
         new_header += f'{comment_char}{tab(1)}{path.basename(filepath)}\n'
         if len(docstring) > 0:
+            if path.basename(filepath) == 'emulated_device.py':
+                pass
             formatted_docstring = self.format_docstring(docstring, comment_char, tab(2))
-            new_header += f'{comment_char}{formatted_docstring}\n'
+            new_header += f'{formatted_docstring}\n'
 
         new_header += f'{comment_char}\n'
-        def make_list_item(indent:int, key:str, val:str) -> str:
+
+        def make_list_item(indent: int, key: str, val: str) -> str:
             list_prefix = tab(indent)[:-1] + '-'
             return f'{comment_char}{list_prefix} {key} : {val}\n'
-        
+
         if len(author) > 0:
             author_fullname = self.config['authors'][file_entry['author']]
             new_header += make_list_item(1, 'Author', author_fullname)
-        
+
         if len(contributors) > 0:
             new_header += make_list_item(1, 'Contributors', "")
             for contributor in contributors:
                 contributor_fullname = self.config['authors'][contributor]
                 new_header += f'{comment_char}{tab(2)[:-1]}- {contributor_fullname}\n'
-        
+
         new_header += make_list_item(1, 'License', self.config['license'])
         project_val = self.config['project']
         if 'repo' in self.config and len(self.config['repo']) > 0:
             project_val += f" ({self.config['repo']})"
         new_header += make_list_item(1, 'Project', project_val)
-                    
+
         new_header += f'{comment_char}\n'
         new_header += f"{comment_char}{tab(1)}Copyright (c) {rendered_date} {self.config['copyright_owner']}\n"
 
@@ -372,7 +379,7 @@ class CodeBanner:
         with open(filepath, 'w', encoding='utf8') as f:
             f.writelines(all_lines)
 
-    def format_docstring(self, docstring: str, comment_char:str, spacer:str):
+    def format_docstring(self, docstring: str, comment_char: str, spacer: str):
         chunk_size = 80
         lines = []
         done = False
@@ -380,7 +387,8 @@ class CodeBanner:
             next_line_break = docstring.find('\n')
             if len(docstring) <= chunk_size:
                 done = True
-                lines.append(docstring[0:].strip())
+                sublines = docstring[0:].strip().split('\n')
+                lines.extend(sublines)
             elif next_line_break >= 0 and next_line_break <= chunk_size:
                 lines.append(docstring[0:next_line_break + 1].strip())
                 docstring = docstring[next_line_break + 1:]
@@ -388,7 +396,7 @@ class CodeBanner:
                 i = 0
                 while True:
                     if len(docstring) <= chunk_size + i:
-                        lines.append(docstring[0:])
+                        lines.append(docstring[0:].strip())
                         done = True
                         break
                     elif docstring[chunk_size + i] in [' ', '\n']:
@@ -397,12 +405,20 @@ class CodeBanner:
                         break
                     else:
                         i += 1
-        docstring = '\n'.join(lines)
-        if docstring:
-            docstring = spacer + docstring
 
-        docstring = docstring.replace('\n', f'\n{comment_char}' + spacer)
-        
+        docstring = ""
+        first_line_written = False
+        for line in lines:
+            line = line.strip()
+            if len(line) == 0:
+                if first_line_written:
+                    docstring += f'\n{comment_char}'
+            else:
+                if first_line_written:
+                    docstring += '\n'
+                docstring += f'{comment_char}' + spacer + line
+                first_line_written = True
+
         return docstring
 
 
