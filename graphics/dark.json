@@ -246,5 +246,37 @@
             [64,48],
             [16,12]
         ]
+    },
+    "hmi_circle" : {
+        "src" : "src/dark/circle-white.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "hmi_square" : {
+        "src" : "src/dark/square-white.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "hmi_line" : {
+        "src" : "src/dark/line-white.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
+    "hmi_label" : {
+        "src" : "src/dark/label-white.png",
+        "formats" : [
+            [256,128],
+            [64,32],
+            [16,8]
+        ]
     }
 }
