@@ -190,5 +190,13 @@
             [64, 64],
             [16, 16]
         ]
+    },
+    "hmi_color_indicator" : {
+        "src" : "src/common/hmi_color_indicator.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
     }
 }
