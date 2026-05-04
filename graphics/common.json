@@ -167,12 +167,19 @@
             [16,16]
         ]
     },
-    "hmi_gauge" : {
-        "src" : "src/common/hmi_gauge.png",
+    "hmi_radial_gauge" : {
+        "src" : "src/common/hmi_radial_gauge.png",
         "formats" : [
             [256,256],
             [64,64],
             [16,16]
+        ]
+    },"hmi_linear_gauge" : {
+        "src" : "src/common/hmi_linear_gauge.png",
+        "formats" : [
+            [128, 256],
+            [32, 64],
+            [8, 16]
         ]
     },
     "hmi_text_display" : {
