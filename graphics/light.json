@@ -270,5 +270,13 @@
             [64,32],
             [16,8]
         ]
+    },
+    "hmi_slider" : {
+        "src" : "src/light/hmi_slider_light.png",
+        "formats" : [
+            [128, 256],
+            [32, 64],
+            [8, 16]
+        ]
     }
 }

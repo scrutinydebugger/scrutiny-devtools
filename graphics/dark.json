@@ -278,5 +278,13 @@
             [64,32],
             [16,8]
         ]
+    },
+    "hmi_slider" : {
+        "src" : "src/dark/hmi_slider_dark.png",
+        "formats" : [
+            [128, 256],
+            [32, 64],
+            [8, 16]
+        ]
     }
 }

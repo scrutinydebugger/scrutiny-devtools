@@ -205,5 +205,13 @@
             [64,64],
             [16,16]
         ]
+    },
+    "hmi_button" : {
+        "src" : "src/common/hmi_button.png",
+        "formats" : [
+            [256,128],
+            [64,32],
+            [16,8]
+        ]
     }
 }
