@@ -37,14 +37,15 @@ class CINode:
 
 @dataclass(slots=True)
 class CIEdge:
-    source:str
-    source_file:str
-    source_signature:str
-    source_func_name:str
-    target:str
-    target_file:str
-    target_signature:str
-    target_func_name:str
+    @dataclass(slots=True)
+    class EdgeEnd:
+        title:str
+        file:str
+        signature:str
+        func_name:str
+
+    source:EdgeEnd
+    target:EdgeEnd
     label:str
 
 @dataclass(init=False, slots=True)
@@ -172,29 +173,24 @@ def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
 
             m = _CI_EDGE_RE.match(line)
             if m:
-                source = str(m.group(1).strip())
-                target =str( m.group(2).strip())
+                def make_edge_end_from_title(title:str) -> CIEdge.EdgeEnd:
+                    file, signature = get_file_func(title)
+                    demangled_signature = demangle(signature)
+                    func_name = get_func_name_from_signature(demangled_signature)
+                    return CIEdge.EdgeEnd(
+                        title=title,
+                        file=file, 
+                        func_name=func_name, 
+                        signature=demangled_signature
+                    )
+                
+                source_title = str(m.group(1).strip())
+                target_title = str(m.group(2).strip())
                 label = str(m.group(3).strip())
 
-                source_file, source_signature = get_file_func(source)
-                target_file, target_signature = get_file_func(target)
-
-                demangled_source_signature = demangle(source_signature)
-                source_func_name = get_func_name_from_signature(demangled_source_signature)
-                demangled_target_signature = demangle(target_signature)
-                target_func_name = get_func_name_from_signature(demangled_target_signature)
-
                 yield CIEdge(
-                    source = source,
-                    source_file=source_file, 
-                    source_func_name=source_func_name, 
-                    source_signature=demangled_source_signature, 
-
-                    target=target,
-                    target_file=target_file, 
-                    target_func_name=target_func_name, 
-                    target_signature=demangled_target_signature,
-
+                    source = make_edge_end_from_title(source_title),
+                    target=make_edge_end_from_title(target_title),
                     label=label
                 )
 
@@ -238,22 +234,22 @@ def read_stack_usage_file(file:Path) -> Generator[Function, None, None]:
                 stack_type = stack_type
                 )
 
-def get_target_ci_node(edge:CIEdge) -> Optional[CINode]:
-    if edge.target not in ci_node_per_title:
+def get_edge_node(end:CIEdge.EdgeEnd) -> Optional[CINode]:
+    if end.title not in ci_node_per_title:
         return None
     
-    for node in ci_node_per_title[edge.target]:
-        if node.source_file == edge.target_file:
+    for node in ci_node_per_title[end.title]:
+        if node.source_file == end.file:
             return node
 
-    return ci_node_per_title[edge.target][0]
+    return ci_node_per_title[end.title][0]
 
 def get_outgoing_edges(source_node:CINode) -> Generator[CIEdge, None, None]:
     if source_node.signature not in edge_per_source_func_signature:
         return None
 
     for edge in edge_per_source_func_signature[source_node.signature]:
-        if edge.source_file == source_node.source_file:
+        if edge.source.file == source_node.source_file:
             yield edge
 
 def get_matching_func(ci_node:CINode) -> Optional[Function]:
@@ -278,9 +274,9 @@ def scan_filesystem_and_init_indexes(root_dir:Path):
                         ci_node_per_title[node.title].append(node)
 
                     elif isinstance(node, CIEdge):
-                        if node.source_signature not in edge_per_source_func_signature:
-                            edge_per_source_func_signature[node.source_signature] = []
-                        edge_per_source_func_signature[node.source_signature].append(node)
+                        if node.source.signature not in edge_per_source_func_signature:
+                            edge_per_source_func_signature[node.source.signature] = []
+                        edge_per_source_func_signature[node.source.signature].append(node)
 
             if filename.endswith('.su'):
                 for func in read_stack_usage_file(Path(dirpath) / filename):
@@ -291,7 +287,7 @@ def scan_filesystem_and_init_indexes(root_dir:Path):
 def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], seen_ci_node:Set[int]) -> None:
     for edge in edges:
         problem:Optional[str] = None
-        target_node = get_target_ci_node(edge)
+        target_node = get_edge_node(edge.target)
         if target_node is None:
             logger.error(f"Cannot find target node of edge: {edge}")
             node.children.append(CallTreeNode(func=None, parent=node, problem="Cannot find target node"))
