@@ -1,16 +1,12 @@
-# This is a home amde script to calculate the stack usage based of GCC output
-# It is missing overload handling, but it's enough for now
-# author : Pier-Yves Lessard
-
 from dataclasses import dataclass
 from pathlib import Path
-from typing import *
 import logging
 import os
 import re
 import argparse
 import subprocess
 import enum
+from typing import List, Generator, Dict, Optional, Union, Tuple, Set, Iterable
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(os.path.basename(__file__))
@@ -93,7 +89,8 @@ class CallTreeNode:
         contender:Optional[Tuple[List["CallTreeNode"], int]] = None
 
         for path in self.walk_leaf():
-            if any( node.func is None for node in path ):
+            # If problem is None, we should have a func and a stack usage
+            if any( node.problem is not None is None for node in path ):
                 continue
             cost = sum(node.func.stack_usage for node in path if node.func is not None and node.func.stack_usage is not None)
             if contender is None or cost>contender[1]:
@@ -104,14 +101,10 @@ class CallTreeNode:
 
     def get_incomplete_paths(self) -> Generator[List["CallTreeNode"], None, None]:
         for path in self.walk_leaf():
-            if path[-1].func is None:
-                yield path
-            else:
-                for node in path:
-                    assert node.func is not None
-                    if node.func.stack_usage is None:
-                        yield path
-                        break
+            for node in path:
+                if node.problem is not None:
+                    yield path
+                    break
             
 
 def get_file_func(s:str) -> Tuple[str,str]:
@@ -297,6 +290,7 @@ def scan_filesystem_and_init_indexes(root_dir:Path):
 
 def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], seen_ci_node:Set[int]) -> None:
     for edge in edges:
+        problem:Optional[str] = None
         target_node = get_target_ci_node(edge)
         if target_node is None:
             logger.error(f"Cannot find target node of edge: {edge}")
@@ -307,23 +301,28 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
             node.children.append(CallTreeNode(func=None, parent=node, problem="Indirect call"))
             continue
         
+        target_func = get_matching_func(target_node)
+        if target_func is None:
+            logger.error(f"Cannot find matching func to node {target_node.signature}")
+            node.children.append(CallTreeNode(func=None, parent=node, problem=f"Missing function {target_node.signature}"))
+            continue
+    
         if id(target_node) in seen_ci_node:
-            problem = f"Recursive function: {target_node.signature}"
-            logger.warning(problem)
-            node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
+            logger.debug(f"Recursive function: {target_node.signature}")
+            node.children.append(CallTreeNode(func=target_func, parent=node, problem="Recursive"))
             continue
 
+        if target_func.stack_usage is None:
+            node.children.append(CallTreeNode(func=target_func, parent=node, problem="Missing stack usage"))
+            continue
+        
+        if target_func.stack_type == Function.StackType.DYNAMIC:
+            problem = "Dynamic stack size"
+        
+        child_node = CallTreeNode(func=target_func, parent=node, problem=problem)
         
         child_seen_node = seen_ci_node.copy()
         child_seen_node.add(id(target_node))
-        target_func = get_matching_func(target_node)
-        if target_func is None:
-            problem = f"Cannot find matching func to node {target_node.signature}"
-            logger.error(problem)
-            node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
-            continue
-        
-        child_node = CallTreeNode(func=target_func, parent=node)
         add_children_to_node_recursive(
             node = child_node, 
             edges = get_outgoing_edges(target_node), 
@@ -332,9 +331,8 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
         node.children.append(child_node)
 
 def build_func_trees(start_func:str) -> Generator[CallTreeNode, None, None]:
-
     start_nodes:List[CINode] = []
-    for tile, nodes in ci_node_per_title.items():
+    for nodes in ci_node_per_title.values():
         for node in nodes:
             if node.func_name == start_func:
                 start_nodes.append(node)
@@ -362,11 +360,41 @@ def build_func_trees(start_func:str) -> Generator[CallTreeNode, None, None]:
             yield root_node
 
 
+def print_stack_path(path:List[CallTreeNode], tab:int = 0) -> None:
+    total = 0
+    is_incomplete:bool = False
+    prefix = ' ' * tab
+    for node in path:
+        if node.problem:
+            is_incomplete = True
+            func_name = ""
+            if node.func is not None:
+                func_name = node.func.su_func_name
+            print(prefix + f"[  ??] |{node.problem}| {func_name}")
+        else:
+            assert node.func is not None
+            assert node.func.stack_usage is not None
+            print(prefix + f"[{node.func.stack_usage:4}] {node.func.su_func_name} ")
+            total += node.func.stack_usage
+    
+    total_string = str(total)
+    if is_incomplete:
+        total_string += '+?'
+    print(prefix + f"[{total_string}] TOTAL")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--loglevel', type=str, default='ERROR')
+    parser.add_argument('--all', action='store_true', default=False)
     parser.add_argument('root_dir', type=str)
     parser.add_argument('funcs', type=str, nargs='*')
     args = parser.parse_args()
+
+    loglevel = args.loglevel.strip().upper()
+    if loglevel not in ['DEBUG', 'WARNING', 'ERROR', 'INFO', 'CRITICAL']:
+        raise ValueError("Invalid log level")
+    logger.setLevel(getattr(logging, loglevel))
 
     scan_filesystem_and_init_indexes(Path(args.root_dir))
     
@@ -375,34 +403,19 @@ def main() -> None:
             heaviest_path = tree.get_heaviest_path()
             incomplete_paths = list(tree.get_incomplete_paths())
             print(f"- {func_name}")
-            total = 0
-            for node in heaviest_path:
-                assert node.func is not None
-                assert node.func.stack_usage is not None
-                total += node.func.stack_usage
-                print(f"    [{node.func.stack_usage:4}] {node.func.su_func_name} ")
-            print(f"    [{total:4}] TOTAL")
+            print_stack_path(heaviest_path, tab=4)
             
-
             if len(incomplete_paths) > 0:
                 print()
-                print("    * There are %d incomplete stack path under this function" % len(incomplete_paths))
-
-                for i in range(len(incomplete_paths)):
-                    path = incomplete_paths[i]
-                    print()
-                    print(f"    - Incomplete path #{i+1}")
-                    partial_total = 0
-                    for node in path:
-                        if node.func is not None:
-                            if node.func.stack_usage is not None:
-                                print(f"      [{node.func.stack_usage:4}] {node.func.su_func_name} ")
-                                partial_total += node.func.stack_usage
-                            else:
-                                print(f"      [????] [{node.func.stack_type}] {node.func.su_func_name}")
-                        else:
-                            print(f"      [????] {node.problem}")
-                    print(f"      [{partial_total}+?] TOTAL")
+                print("    * There are %d incomplete stack path under this function." % len(incomplete_paths))
+                if not args.all:
+                    print("    * Use --all to print them")
+                else:
+                    for i in range(len(incomplete_paths)):
+                        print()
+                        print(f"    - Incomplete path #{i+1}")
+                        print_stack_path(incomplete_paths[i], tab=8)
             print()
+            
 if __name__ == '__main__':
     main()
