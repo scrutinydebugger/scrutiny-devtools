@@ -10,17 +10,24 @@ import os
 import re
 import argparse
 import subprocess
+import enum
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(os.path.basename(__file__))
 
 @dataclass(slots=True)
 class Function:
+    class StackType(enum.StrEnum):
+        STATIC = "static"
+        DYNAMIC_BOUNDED = "dynamic,bounded"
+        DYNAMIC = "dynamic"
+
     source_file:str
     func_line:int
     func_col:int
     su_func_name:str
     stack_usage:Optional[int]
+    stack_type:StackType
 
 
 @dataclass(slots=True)
@@ -95,6 +102,17 @@ class CallTreeNode:
             return []
         return contender[0]
 
+    def get_incomplete_paths(self) -> Generator[List["CallTreeNode"], None, None]:
+        for path in self.walk_leaf():
+            if path[-1].func is None:
+                yield path
+            else:
+                for node in path:
+                    assert node.func is not None
+                    if node.func.stack_usage is None:
+                        yield path
+                        break
+            
 
 def get_file_func(s:str) -> Tuple[str,str]:
     parts = s.split(':')
@@ -144,7 +162,6 @@ def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
 
                 label_func:Optional[str] = None
                 if len(label_split_by_lines) > 0:
-                    
                     # Seems like when there is a function name, it's on the first line
                     # if not, the file:line:col is the first line. 
                     # The best I could find.
@@ -196,11 +213,7 @@ def read_stack_usage_file(file:Path) -> Generator[Function, None, None]:
             line = line.strip()
             if len(line) == 0:
                 continue
-                    
-            if not (line.endswith('static') or line.endswith('bounded')):
-                logger.debug(f'File {file}. Skipping {line}')
-                continue
-            
+
             m = _SU_LINE_REGEX.match(line)
             if not m:
                 raise RuntimeError(f"Line regex didn't work on {line}")
@@ -210,15 +223,23 @@ def read_stack_usage_file(file:Path) -> Generator[Function, None, None]:
             col_number = int(m.group(3).strip())
             su_func_name = m.group(4).strip()
             stack_usage:Optional[int] = None
-            if m.group(6):
-                stack_usage = int(m.group(6))
+            stack_type = Function.StackType(m.group(8).strip())
+
+            if stack_type in (Function.StackType.STATIC, Function.StackType.DYNAMIC_BOUNDED):
+                if m.group(6):
+                    stack_usage = int(m.group(6))
+                else:
+                    logger.error(f"Cannot find stack usage in line: {line}")
+            else:
+                logger.debug(f"Dynamic function {su_func_name}. stack_usage=None")
 
             yield Function(
                 su_func_name=su_func_name,
                 source_file = source_file, 
                 func_line = line_number, 
                 func_col = col_number, 
-                stack_usage = stack_usage
+                stack_usage = stack_usage,
+                stack_type = stack_type
                 )
 
 def get_target_ci_node(edge:CIEdge) -> Optional[CINode]:
@@ -267,6 +288,7 @@ def scan_filesystem_and_init_indexes(root_dir:Path):
                         if node.source_signature not in edge_per_source_func_signature:
                             edge_per_source_func_signature[node.source_signature] = []
                         edge_per_source_func_signature[node.source_signature].append(node)
+
             if filename.endswith('.su'):
                 for func in read_stack_usage_file(Path(dirpath) / filename):
                     if func.su_func_name not in all_func_per_su_name:
@@ -277,13 +299,12 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
     for edge in edges:
         target_node = get_target_ci_node(edge)
         if target_node is None:
-            problem = f"Cannot find target node of edge: {edge}"
-            logger.warning(problem)
-            node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
+            logger.error(f"Cannot find target node of edge: {edge}")
+            node.children.append(CallTreeNode(func=None, parent=node, problem="Cannot find target node"))
             continue
         
         if id(target_node) in seen_ci_node:
-            problem = f"Seen node {target_node} more than once in {node.func}"
+            problem = f"Recursive function: {target_node.signature}"
             logger.warning(problem)
             node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
             continue
@@ -292,8 +313,8 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
         child_seen_node.add(id(target_node))
         target_func = get_matching_func(target_node)
         if target_func is None:
-            problem = f"Cannot find matching func to node {target_node}"
-            logger.warning(problem)
+            problem = f"Cannot find matching func to node {target_node.signature}"
+            logger.error(problem)
             node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
             continue
         
@@ -321,14 +342,13 @@ def build_func_trees(start_func:str) -> Generator[CallTreeNode, None, None]:
     
     if len(start_nodes) == 0:
         logger.error(f"Could not find a node matching: {start_func}")
-        root_node = CallTreeNode(func=None, parent=None, problem="No matching func with CI node")
-        yield root_node
     else:
         for start_node in start_nodes:
             func = get_matching_func(start_node)
             if func is None:
-                logger.error(f"Could not find given start function {start_func}")
-                root_node = CallTreeNode(func=None, parent=None, problem="No matching func with CI node")
+                problem = f"Cannot find matching function to node {start_node.signature}"
+                logger.error(problem)
+                root_node = CallTreeNode(func=None, parent=None, problem=problem)
             else:
                 root_node = CallTreeNode(func=func, parent=None)
                 edges = get_outgoing_edges(start_node)
@@ -347,16 +367,33 @@ def main() -> None:
     
     for func_name in args.funcs:
         for tree in build_func_trees(func_name):
-            callstack = tree.get_heaviest_path()
+            heaviest_path = tree.get_heaviest_path()
+            incomplete_paths = list(tree.get_incomplete_paths())
             print(f"- {func_name}")
             total = 0
-            for node in callstack:
+            for node in heaviest_path:
                 assert node.func is not None
                 assert node.func.stack_usage is not None
                 total += node.func.stack_usage
                 print(f"    [{node.func.stack_usage:4}] {node.func.su_func_name} ")
             print(f"    [{total:4}] TOTAL")
             print()
+
+            if len(incomplete_paths) > 0:
+                print("    * There are %d incomplete stack path under this function" % len(incomplete_paths))
+
+                for i in range(len(incomplete_paths)):
+                    path = incomplete_paths[i]
+                    print()
+                    print(f"    - Incomplete path #{i+1}")
+                    for node in path:
+                        if node.func is not None:
+                            if node.func.stack_usage is not None:
+                                print(f"      [{node.func.stack_usage:4}] {node.func.su_func_name} ")
+                            else:
+                                print(f"      [????] [{node.func.stack_type}] {node.func.su_func_name}")
+                        else:
+                            print(f"      [????] {node.problem}")
 
 if __name__ == '__main__':
     main()
