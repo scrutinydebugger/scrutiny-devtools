@@ -11,31 +11,33 @@ import re
 import argparse
 import subprocess
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(os.path.basename(__file__))
 
 @dataclass(slots=True)
 class Function:
-    pretty_name:str
-    return_type:str
-    signature:str
     source_file:str
     func_line:int
     func_col:int
-    stack_usage:int
+    su_func_name:str
+    stack_usage:Optional[int]
+
 
 @dataclass(slots=True)
 class CINode:
+    title:str
     source_file:str
     func_name:str
     signature:str
-    stack_usage_from_label:Optional[int]
+    label_func:Optional[str]
 
 @dataclass(slots=True)
 class CIEdge:
+    source:str
     source_file:str
     source_signature:str
     source_func_name:str
+    target:str
     target_file:str
     target_signature:str
     target_func_name:str
@@ -86,7 +88,7 @@ class CallTreeNode:
         for path in self.walk_leaf():
             if any( node.func is None for node in path ):
                 continue
-            cost = sum(node.func.stack_usage for node in path if node.func is not None)
+            cost = sum(node.func.stack_usage for node in path if node.func is not None and node.func.stack_usage is not None)
             if contender is None or cost>contender[1]:
                 contender = (path, cost)
         if contender is None:
@@ -111,14 +113,12 @@ def demangle(name:str) -> str:
 
 _CI_NODE_RE = re.compile(r'^node:\s*\{\s*title:\s*"([^"]*)"\s*label:\s*"([^"]*)"\s*(?:shape\s*:\s*\w+\s*)?\}')
 _CI_EDGE_RE = re.compile(r'^edge:\s*\{\s*sourcename:\s*"([^"]*)"\s*targetname:\s*"([^"]*)"\s*label:\s*"([^"]*)"\s*\}')
-_STACK_SIZE_REGEX = re.compile(r'^(\d+) bytes?')
+_SU_LINE_REGEX = re.compile(r'^(.+):(\d+):(\d+):([^\t]+)(\t([^\t]+)(\t([^\t]+))?)?$')
+_LABEL_FIRST_LINE_FILE_REGEX = re.compile(r'.+:\d+:\d+$')
 
-_STACK_USAGE_REGEX = re.compile(r'(\d+)\D*$')
-_OBJECT_REGEX = re.compile(r'^(.+):(\d+):(\d+):(([^ \(]+) )?(.+)$')
-_SIGNATURE_PARSE_REGEX = re.compile(r'^([^\(]+)\(.*\)(.*)$')
-
-all_func_per_name:Dict[str, List[Function]] = {}
-ci_node_per_func_name:Dict[str, List[CINode]] = {}
+all_func_per_su_name:Dict[str, List[Function]] = {}
+ci_node_per_title:Dict[str, List[CINode]] = {}
+ci_node_per_label:Dict[str, List[CINode]] = {}
 edge_per_source_func_signature:Dict[str, List[CIEdge]] = {}
 
 def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
@@ -137,23 +137,26 @@ def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
             if m:
                 title = m.group(1).strip()
                 source_file, signature = get_file_func(title)
-                stack_usage_from_label:Optional[int] = None
                 label = m.group(2).strip()
                 label_split_by_lines = label.split('\\n')
-                if len(label_split_by_lines) == 3:
-                    m = _STACK_SIZE_REGEX.match(label_split_by_lines[-1])
-                    if not m:
-                        logger.error(f"Did not find stack size in {file}. Line: {line} ")
-                        continue
-                    stack_usage_from_label = int(m.group(1))
                 demangled_signature = demangle(signature)
                 func_name = get_func_name_from_signature(demangled_signature)
 
+                label_func:Optional[str] = None
+                if len(label_split_by_lines) > 0:
+                    
+                    # Seems like when there is a function name, it's on the first line
+                    # if not, the file:line:col is the first line. 
+                    # The best I could find.
+                    if not _LABEL_FIRST_LINE_FILE_REGEX.match(label_split_by_lines[0]):
+                        label_func = label_split_by_lines[0].strip()
+
                 yield CINode(
+                    title=title,
                     source_file=source_file, 
                     func_name=func_name, 
                     signature=demangled_signature, 
-                    stack_usage_from_label=stack_usage_from_label
+                    label_func=label_func
                     )
                 continue
 
@@ -172,10 +175,12 @@ def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
                 target_func_name = get_func_name_from_signature(demangled_target_signature)
 
                 yield CIEdge(
+                    source = source,
                     source_file=source_file, 
                     source_func_name=source_func_name, 
                     source_signature=demangled_source_signature, 
-                   
+
+                    target=target,
                     target_file=target_file, 
                     target_func_name=target_func_name, 
                     target_signature=demangled_target_signature,
@@ -196,55 +201,35 @@ def read_stack_usage_file(file:Path) -> Generator[Function, None, None]:
                 logger.debug(f'File {file}. Skipping {line}')
                 continue
             
-            usage_match = _STACK_USAGE_REGEX.search(line)
-            if usage_match is None:
-                logger.debug(f'File {file}. No usage_match. Skipping {line}')
-                continue
-            
-            line = line[:usage_match.start()].strip()
-            object_match = _OBJECT_REGEX.match(line)
-            if not object_match:
-                logger.debug(f'File {file}. No object_match. Skipping {line}')
-                continue
-            
-            stack_usage = int(usage_match.group(1))
-            source_file = object_match.group(1).strip()
-            line_number = int(object_match.group(2))
-            col_number = int(object_match.group(3))
-            return_type = object_match.group(4).strip()
-            signature = object_match.group(6).strip()
-            demangled_signature = demangle(signature)
-            m = _SIGNATURE_PARSE_REGEX.match(demangled_signature)
+            m = _SU_LINE_REGEX.match(line)
             if not m:
-                logger.debug(f'Invalid signature in {line}')
-                continue
-
-            pretty_name = m.group(1).strip()
+                raise RuntimeError(f"Line regex didn't work on {line}")
+            
+            source_file = m.group(1).strip()
+            line_number = int(m.group(2).strip())
+            col_number = int(m.group(3).strip())
+            su_func_name = m.group(4).strip()
+            stack_usage:Optional[int] = None
+            if m.group(6):
+                stack_usage = int(m.group(6))
 
             yield Function(
-                pretty_name=pretty_name, 
-                return_type=return_type,
-                signature =demangled_signature,
+                su_func_name=su_func_name,
                 source_file = source_file, 
                 func_line = line_number, 
                 func_col = col_number, 
-                stack_usage = stack_usage,
+                stack_usage = stack_usage
                 )
 
 def get_target_ci_node(edge:CIEdge) -> Optional[CINode]:
-    if edge.target_func_name not in ci_node_per_func_name:
+    if edge.target not in ci_node_per_title:
         return None
     
-    nodes = [node for node in ci_node_per_func_name[edge.target_func_name] if node.signature == edge.target_signature]
-
-    if len(nodes) == 0:
-        return None
-    
-    for node in nodes: # Priority to same compile unit for linkage
-        if node.source_file == edge.source_file:
+    for node in ci_node_per_title[edge.target]:
+        if node.source_file == edge.target_file:
             return node
-    
-    return nodes[0]
+
+    return ci_node_per_title[edge.target][0]
 
 def get_outgoing_edges(source_node:CINode) -> Generator[CIEdge, None, None]:
     if source_node.signature not in edge_per_source_func_signature:
@@ -258,21 +243,14 @@ def get_outgoing_edges(source_node:CINode) -> Generator[CIEdge, None, None]:
                 yield edge
 
 def get_matching_func(ci_node:CINode) -> Optional[Function]:
-    if ci_node.func_name not in all_func_per_name:
+    if ci_node.label_func not in all_func_per_su_name:
         return None 
     
-    func_with_correct_signature = [f for f in all_func_per_name[ci_node.func_name] if f.signature == ci_node.signature]
-    for func in func_with_correct_signature:
-        if func.source_file == ci_node.source_file:
-            return func
-        
-        return func_with_correct_signature[0]
-
-    for func in all_func_per_name[ci_node.func_name]:
+    for func in all_func_per_su_name[ci_node.label_func]:
         if func.source_file == ci_node.source_file:
             return func
     
-    return all_func_per_name[ci_node.func_name][0]
+    return all_func_per_su_name[ci_node.label_func][0]
 
 
 def scan_filesystem_and_init_indexes(root_dir:Path):
@@ -281,18 +259,19 @@ def scan_filesystem_and_init_indexes(root_dir:Path):
             if filename.endswith('.ci'):
                 for node in read_ci_file(Path(dirpath) / filename):
                     if isinstance(node, CINode):
-                        if node.func_name not in ci_node_per_func_name:
-                            ci_node_per_func_name[node.func_name] = []
-                        ci_node_per_func_name[node.func_name].append(node)
+                        if node.title not in ci_node_per_title:
+                            ci_node_per_title[node.title] = []                            
+                        ci_node_per_title[node.title].append(node)
+
                     elif isinstance(node, CIEdge):
                         if node.source_signature not in edge_per_source_func_signature:
                             edge_per_source_func_signature[node.source_signature] = []
                         edge_per_source_func_signature[node.source_signature].append(node)
             if filename.endswith('.su'):
                 for func in read_stack_usage_file(Path(dirpath) / filename):
-                    if func.pretty_name not in all_func_per_name:
-                        all_func_per_name[func.pretty_name] = []
-                    all_func_per_name[func.pretty_name].append(func)   
+                    if func.su_func_name not in all_func_per_su_name:
+                        all_func_per_su_name[func.su_func_name] = []
+                    all_func_per_su_name[func.su_func_name].append(func)   
 
 def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], seen_ci_node:Set[int]) -> None:
     for edge in edges:
@@ -327,17 +306,35 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
         node.children.append(child_node)
 
 def build_func_trees(start_func:str) -> Generator[CallTreeNode, None, None]:
-    for ci_node in ci_node_per_func_name.get(start_func, []):
-        func = get_matching_func(ci_node)
-        if func is None:
-            logger.error(f"Could not find given start function {start_func}")
-            root_node = CallTreeNode(func=None, parent=None, problem="No matching func with CI node")
-        else:
-            root_node = CallTreeNode(func=func, parent=None)
-            edges = get_outgoing_edges(ci_node)
-            add_children_to_node_recursive(root_node, edges, set([id(ci_node)]))
-            
+
+    start_nodes:List[CINode] = []
+    for tile, nodes in ci_node_per_title.items():
+        for node in nodes:
+            if node.func_name == start_func:
+                start_nodes.append(node)
+                break
+
+            if node.signature == start_func:
+                start_nodes.append(node)
+                break
+    
+    
+    if len(start_nodes) == 0:
+        logger.error(f"Could not find a node matching: {start_func}")
+        root_node = CallTreeNode(func=None, parent=None, problem="No matching func with CI node")
         yield root_node
+    else:
+        for start_node in start_nodes:
+            func = get_matching_func(start_node)
+            if func is None:
+                logger.error(f"Could not find given start function {start_func}")
+                root_node = CallTreeNode(func=None, parent=None, problem="No matching func with CI node")
+            else:
+                root_node = CallTreeNode(func=func, parent=None)
+                edges = get_outgoing_edges(start_node)
+                add_children_to_node_recursive(root_node, edges, set([id(start_node)]))
+                
+            yield root_node
 
 
 def main() -> None:
@@ -355,8 +352,9 @@ def main() -> None:
             total = 0
             for node in callstack:
                 assert node.func is not None
+                assert node.func.stack_usage is not None
                 total += node.func.stack_usage
-                print(f"    [{node.func.stack_usage:4}] {node.func.signature} ")
+                print(f"    [{node.func.stack_usage:4}] {node.func.su_func_name} ")
             print(f"    [{total:4}] TOTAL")
             print()
 
