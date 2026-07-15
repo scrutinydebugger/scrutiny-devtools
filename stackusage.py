@@ -251,13 +251,10 @@ def get_target_ci_node(edge:CIEdge) -> Optional[CINode]:
 def get_outgoing_edges(source_node:CINode) -> Generator[CIEdge, None, None]:
     if source_node.signature not in edge_per_source_func_signature:
         return None
-    generated_edges:Set[int] = set()
 
     for edge in edge_per_source_func_signature[source_node.signature]:
-        if id(edge) not in generated_edges:
-            if edge.source_file == source_node.source_file:
-                generated_edges.add(id(edge))
-                yield edge
+        if edge.source_file == source_node.source_file:
+            yield edge
 
 def get_matching_func(ci_node:CINode) -> Optional[Function]:
     if ci_node.label_func not in all_func_per_su_name:
