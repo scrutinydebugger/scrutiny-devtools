@@ -14,6 +14,7 @@ logger = logging.getLogger(os.path.basename(__file__))
 @dataclass(slots=True)
 class Function:
     class StackType(enum.StrEnum):
+        UNKNOWN = "unknown"
         STATIC = "static"
         DYNAMIC_BOUNDED = "dynamic,bounded"
         DYNAMIC = "dynamic"
@@ -90,7 +91,7 @@ class CallTreeNode:
 
         for path in self.walk_leaf():
             # If problem is None, we should have a func and a stack usage
-            if any( node.problem is not None is None for node in path ):
+            if any( node.problem is not None for node in path ):
                 continue
             cost = sum(node.func.stack_usage for node in path if node.func is not None and node.func.stack_usage is not None)
             if contender is None or cost>contender[1]:
@@ -119,7 +120,7 @@ def get_file_func(s:str) -> Tuple[str,str]:
 def demangle(name:str) -> str:
     p = subprocess.run(['c++filt', name],stdout=subprocess.PIPE)
     if p.returncode != 0:
-        raise RuntimeError(f"c+filt failed on {name}")
+        raise RuntimeError(f"c++filt failed on {name}")
     return p.stdout.decode('utf8').strip()
 
 _CI_NODE_RE = re.compile(r'^node:\s*\{\s*title:\s*"([^"]*)"\s*label:\s*"([^"]*)"\s*(?:shape\s*:\s*\w+\s*)?\}')
@@ -129,7 +130,6 @@ _LABEL_FIRST_LINE_FILE_REGEX = re.compile(r'.+:\d+:\d+$')
 
 all_func_per_su_name:Dict[str, List[Function]] = {}
 ci_node_per_title:Dict[str, List[CINode]] = {}
-ci_node_per_label:Dict[str, List[CINode]] = {}
 edge_per_source_func_signature:Dict[str, List[CIEdge]] = {}
 
 def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
@@ -154,7 +154,7 @@ def read_ci_file(file:Path) -> Generator[Union[CINode, CIEdge], None, None]:
                 func_name = get_func_name_from_signature(demangled_signature)
 
                 label_func:Optional[str] = None
-                if len(label_split_by_lines) > 0:
+                if len(label_split_by_lines[0]) > 0:
                     # Seems like when there is a function name, it's on the first line
                     # if not, the file:line:col is the first line. 
                     # The best I could find.
@@ -216,7 +216,10 @@ def read_stack_usage_file(file:Path) -> Generator[Function, None, None]:
             col_number = int(m.group(3).strip())
             su_func_name = m.group(4).strip()
             stack_usage:Optional[int] = None
-            stack_type = Function.StackType(m.group(8).strip())
+            if m.group(8) is None:
+                stack_type = Function.StackType.UNKNOWN
+            else:
+                stack_type = Function.StackType(m.group(8).strip())
 
             if stack_type in (Function.StackType.STATIC, Function.StackType.DYNAMIC_BOUNDED):
                 if m.group(6):
@@ -416,6 +419,6 @@ def main() -> None:
                         print(f"    - Incomplete path #{i+1}")
                         print_stack_path(incomplete_paths[i], tab=8)
             print()
-            
+
 if __name__ == '__main__':
     main()
