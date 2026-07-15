@@ -303,11 +303,16 @@ def add_children_to_node_recursive(node:CallTreeNode, edges:Iterable[CIEdge], se
             node.children.append(CallTreeNode(func=None, parent=node, problem="Cannot find target node"))
             continue
         
+        if target_node.signature == '__indirect_call':
+            node.children.append(CallTreeNode(func=None, parent=node, problem="Indirect call"))
+            continue
+        
         if id(target_node) in seen_ci_node:
             problem = f"Recursive function: {target_node.signature}"
             logger.warning(problem)
             node.children.append(CallTreeNode(func=None, parent=node, problem=problem))
             continue
+
         
         child_seen_node = seen_ci_node.copy()
         child_seen_node.add(id(target_node))
@@ -377,23 +382,27 @@ def main() -> None:
                 total += node.func.stack_usage
                 print(f"    [{node.func.stack_usage:4}] {node.func.su_func_name} ")
             print(f"    [{total:4}] TOTAL")
-            print()
+            
 
             if len(incomplete_paths) > 0:
+                print()
                 print("    * There are %d incomplete stack path under this function" % len(incomplete_paths))
 
                 for i in range(len(incomplete_paths)):
                     path = incomplete_paths[i]
                     print()
                     print(f"    - Incomplete path #{i+1}")
+                    partial_total = 0
                     for node in path:
                         if node.func is not None:
                             if node.func.stack_usage is not None:
                                 print(f"      [{node.func.stack_usage:4}] {node.func.su_func_name} ")
+                                partial_total += node.func.stack_usage
                             else:
                                 print(f"      [????] [{node.func.stack_type}] {node.func.su_func_name}")
                         else:
                             print(f"      [????] {node.problem}")
-
+                    print(f"      [{partial_total}+?] TOTAL")
+            print()
 if __name__ == '__main__':
     main()
