@@ -33,6 +33,7 @@ class Language(enum.Enum):
     DOCKER = "Docker"
     BASH = "Bash"
     BATCHFILE = "Batchfile"
+    RST = "ReStructuredText"
 
 
 class FileType(enum.Enum):
@@ -222,6 +223,8 @@ def get_language(filename: str, metadata: FolderMetadata) -> Language:
         return Language.CMAKE
     if ext in ['.bat']:
         return Language.BATCHFILE
+    if ext in ['.rst', '.rst.txt']:
+        return Language.RST
 
     raise Exception('Unknown language for file %s' % filename)
 

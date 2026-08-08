@@ -286,5 +286,37 @@
             [32, 64],
             [8, 16]
         ]
+    },
+    "numeric_format_bin" : {
+        "src" : "src/dark/numeric_format_bin.png",
+        "formats" : [
+            [256, 128],
+            [64, 32],
+            [16, 8]
+        ]
+    },
+    "numeric_format_hex" : {
+        "src" : "src/dark/numeric_format_hex.png",
+        "formats" : [
+            [256, 128],
+            [64, 32],
+            [16, 8]
+        ]
+    },
+    "numeric_format_dec" : {
+        "src" : "src/dark/numeric_format_dec.png",
+        "formats" : [
+            [256, 128],
+            [64, 32],
+            [16, 8]
+        ]
+    },
+    "numeric_format" : {
+        "src" : "src/dark/numeric_format.png",
+        "formats" : [
+            [256, 128],
+            [64, 32],
+            [16, 8]
+        ]
     }
 }
