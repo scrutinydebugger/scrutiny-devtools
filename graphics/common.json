@@ -87,6 +87,14 @@
             [16,16]
         ]
     },
+    "math" : {
+        "src" : "src/common/math.png",
+        "formats" : [
+            [256,256],
+            [64,64],
+            [16,16]
+        ]
+    },
     "csv" : {
         "src" : "src/common/csv.png",
         "formats" : [
